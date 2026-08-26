@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { syncLibrary } from "@/lib/recommend";
+import { matchWishlistToLibrary, syncLibrary } from "@/lib/recommend";
 
 export async function POST() {
   try {
     const result = await syncLibrary();
-    return NextResponse.json(result);
+    const fetchedMatchCount = matchWishlistToLibrary();
+    return NextResponse.json({ ...result, fetchedMatchCount });
   } catch (err) {
     return NextResponse.json(
       { error: (err as Error).message },

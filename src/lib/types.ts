@@ -54,6 +54,7 @@ export interface RecommendationRow {
   user_rating: number | null;
   genres: string | null;
   library_group_id: string | null;
+  fetched_at: string | null;
   created_at: string;
   updated_at: string;
 }

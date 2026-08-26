@@ -73,6 +73,34 @@ export function RecommendationsBoard({ libraryGroupId }: RecommendationsBoardPro
     [items],
   );
 
+  const handleFetchedChange = useCallback(
+    async (id: string, fetched: boolean) => {
+      const previous = items;
+      const fetchedAt = fetched ? new Date().toISOString() : null;
+      const applyFetched = (list: RecommendationRow[]) =>
+        list.map((item) => (item.id === id ? { ...item, fetched_at: fetchedAt } : item));
+      setItems(applyFetched);
+      setSelected((current) => (current ? applyFetched([current])[0] : current));
+      try {
+        const res = await fetch(`/api/recommendations/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fetched }),
+        });
+        if (!res.ok) throw new Error("Failed to update recommendation");
+      } catch (err) {
+        setItems(previous);
+        setError((err as Error).message);
+      }
+    },
+    [items],
+  );
+
+  const displayedItems =
+    activeTab === "yes"
+      ? [...items].sort((a, b) => Number(a.fetched_at != null) - Number(b.fetched_at != null))
+      : items;
+
   return (
     <div className="flex flex-col gap-4">
       <StatusTabs active={activeTab} onChange={setActiveTab} />
@@ -85,7 +113,7 @@ export function RecommendationsBoard({ libraryGroupId }: RecommendationsBoardPro
 
       {loading ? (
         <p className="text-sm text-black/50 dark:text-white/50">Loading…</p>
-      ) : items.length === 0 ? (
+      ) : displayedItems.length === 0 ? (
         <p className="text-sm text-black/50 dark:text-white/50">
           {activeTab === "pending"
             ? "No pending recommendations. Click \"Generate Recommendations\" to get started."
@@ -93,11 +121,12 @@ export function RecommendationsBoard({ libraryGroupId }: RecommendationsBoardPro
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {items.map((item) => (
+          {displayedItems.map((item) => (
             <RecommendationCard
               key={item.id}
               recommendation={item}
               onStatusChange={handleStatusChange}
+              onFetchedChange={handleFetchedChange}
               onOpen={setSelected}
             />
           ))}
@@ -109,6 +138,7 @@ export function RecommendationsBoard({ libraryGroupId }: RecommendationsBoardPro
           recommendation={selected}
           onClose={() => setSelected(null)}
           onStatusChange={handleStatusChange}
+          onFetchedChange={handleFetchedChange}
         />
       )}
     </div>

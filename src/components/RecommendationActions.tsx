@@ -14,11 +14,13 @@ const STATUS_BADGE: Record<string, string> = {
 interface RecommendationActionsProps {
   recommendation: RecommendationRow;
   onStatusChange: (id: string, status: "yes" | "no" | "watched", userRating?: number) => void;
+  onFetchedChange?: (id: string, fetched: boolean) => void;
 }
 
 export function RecommendationActions({
   recommendation,
   onStatusChange,
+  onFetchedChange,
 }: RecommendationActionsProps) {
   const [rating, setRating] = useState(false);
 
@@ -30,6 +32,30 @@ export function RecommendationActions({
           ? `Watched · Rated ${recommendation.user_rating}/10`
           : "Watched"
         : "Dismissed";
+
+  if (recommendation.status === "yes") {
+    const fetched = recommendation.fetched_at != null;
+    return (
+      <div className="flex items-center gap-2">
+        <span
+          className={`inline-block rounded px-2 py-1 text-xs font-medium ${STATUS_BADGE.yes}`}
+        >
+          {statusLabel}
+        </span>
+        <button
+          type="button"
+          onClick={() => onFetchedChange?.(recommendation.id, !fetched)}
+          className={`rounded px-2 py-1 text-xs font-medium ${
+            fetched
+              ? "bg-indigo-600/15 text-indigo-700 hover:bg-indigo-600/25 dark:text-indigo-400"
+              : "bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20"
+          }`}
+        >
+          {fetched ? "✓ Fetched" : "Mark as Fetched"}
+        </button>
+      </div>
+    );
+  }
 
   if (recommendation.status !== "pending") {
     return (

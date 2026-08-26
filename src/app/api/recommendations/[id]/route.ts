@@ -3,10 +3,15 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import type { RecommendationRow } from "@/lib/types";
 
-const patchSchema = z.object({
-  status: z.enum(["pending", "yes", "no", "watched"]),
-  userRating: z.number().min(1).max(10).optional(),
-});
+const patchSchema = z
+  .object({
+    status: z.enum(["pending", "yes", "no", "watched"]).optional(),
+    userRating: z.number().min(1).max(10).optional(),
+    fetched: z.boolean().optional(),
+  })
+  .refine((data) => data.status !== undefined || data.fetched !== undefined, {
+    message: "Provide status and/or fetched",
+  });
 
 export async function PATCH(
   request: NextRequest,
@@ -18,11 +23,21 @@ export async function PATCH(
     const db = getDb();
     const updatedAt = new Date().toISOString();
 
+    const sets: string[] = ["updated_at = ?"];
+    const values: (string | number | null)[] = [updatedAt];
+    if (body.status !== undefined) {
+      sets.push("status = ?", "user_rating = ?");
+      values.push(body.status, body.userRating ?? null);
+    }
+    if (body.fetched !== undefined) {
+      sets.push("fetched_at = ?");
+      values.push(body.fetched ? updatedAt : null);
+    }
+    values.push(id);
+
     const result = db
-      .prepare(
-        `UPDATE recommendations SET status = ?, user_rating = ?, updated_at = ? WHERE id = ?`,
-      )
-      .run(body.status, body.userRating ?? null, updatedAt, id);
+      .prepare(`UPDATE recommendations SET ${sets.join(", ")} WHERE id = ?`)
+      .run(...values);
 
     if (result.changes === 0) {
       return NextResponse.json({ error: "Recommendation not found" }, { status: 404 });

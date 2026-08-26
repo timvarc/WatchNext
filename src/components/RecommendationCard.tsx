@@ -8,12 +8,14 @@ import type { RecommendationRow } from "@/lib/types";
 interface RecommendationCardProps {
   recommendation: RecommendationRow;
   onStatusChange: (id: string, status: "yes" | "no" | "watched", userRating?: number) => void;
+  onFetchedChange?: (id: string, fetched: boolean) => void;
   onOpen: (recommendation: RecommendationRow) => void;
 }
 
 export function RecommendationCard({
   recommendation,
   onStatusChange,
+  onFetchedChange,
   onOpen,
 }: RecommendationCardProps) {
   const posterUrl = buildTmdbPosterUrl(recommendation.poster_path);
@@ -66,6 +68,7 @@ export function RecommendationCard({
           <RecommendationActions
             recommendation={recommendation}
             onStatusChange={onStatusChange}
+            onFetchedChange={onFetchedChange}
           />
         </div>
       </div>

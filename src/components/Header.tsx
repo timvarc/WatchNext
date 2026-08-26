@@ -21,6 +21,7 @@ export function Header({ libraryGroupId, onSelectGroup }: HeaderProps) {
   const [syncing, setSyncing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -53,10 +54,17 @@ export function Header({ libraryGroupId, onSelectGroup }: HeaderProps) {
   const handleSync = useCallback(async () => {
     setSyncing(true);
     setError(null);
+    setSyncNotice(null);
     try {
       const res = await fetch("/api/sync", { method: "POST" });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Sync failed");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Sync failed");
       await loadStatus();
+      if (data.fetchedMatchCount > 0) {
+        setSyncNotice(
+          `Matched ${data.fetchedMatchCount} wishlist item${data.fetchedMatchCount === 1 ? "" : "s"} to your library.`,
+        );
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -145,6 +153,11 @@ export function Header({ libraryGroupId, onSelectGroup }: HeaderProps) {
       {error && (
         <p className="rounded bg-red-500/10 p-2 text-sm text-red-700 dark:text-red-400">
           {error}
+        </p>
+      )}
+      {syncNotice && (
+        <p className="rounded bg-indigo-500/10 p-2 text-sm text-indigo-700 dark:text-indigo-400">
+          {syncNotice}
         </p>
       )}
     </header>

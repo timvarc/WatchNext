@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
   user_rating  REAL,
   genres       TEXT,
   library_group_id TEXT,
+  fetched_at   TEXT,
   created_at   TEXT NOT NULL,
   updated_at   TEXT NOT NULL
 );
@@ -135,6 +136,7 @@ function runMigrations(db: Database.Database) {
   ensureColumn(db, "recommendations", "library_group_id", "TEXT");
   ensureWatchedStatusSupport(db);
   ensureColumn(db, "recommendations", "genres", "TEXT");
+  ensureColumn(db, "recommendations", "fetched_at", "TEXT");
 }
 
 let dbInstance: Database.Database | undefined;

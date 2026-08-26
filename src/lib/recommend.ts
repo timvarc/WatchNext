@@ -221,6 +221,54 @@ Suggest a diverse list of 10-15 new recommendations based on the taste profile a
   return { system, user };
 }
 
+export function matchWishlistToLibrary(db: Database.Database = getDb()): number {
+  const libraryRows = db
+    .prepare<[], Pick<LibraryItemRow, "tmdb_id" | "title" | "year" | "type">>(
+      `SELECT tmdb_id, title, year, type FROM library_items`,
+    )
+    .all();
+
+  const tmdbIds = new Set(
+    libraryRows.map((row) => row.tmdb_id).filter((id): id is number => id != null),
+  );
+  const keys = new Set(
+    libraryRows.map((row) =>
+      normalizeKey(row.title, row.year, row.type === "show" ? "tv" : "movie"),
+    ),
+  );
+
+  const candidates = db
+    .prepare<
+      [],
+      Pick<RecommendationRow, "id" | "tmdb_id" | "title" | "year" | "media_type">
+    >(
+      `SELECT id, tmdb_id, title, year, media_type FROM recommendations
+       WHERE status = 'yes' AND fetched_at IS NULL`,
+    )
+    .all();
+
+  const matchedIds = candidates
+    .filter(
+      (row) =>
+        (row.tmdb_id != null && tmdbIds.has(row.tmdb_id)) ||
+        keys.has(normalizeKey(row.title, row.year, row.media_type)),
+    )
+    .map((row) => row.id);
+
+  if (matchedIds.length === 0) return 0;
+
+  const now = new Date().toISOString();
+  const update = db.prepare(
+    `UPDATE recommendations SET fetched_at = ?, updated_at = ? WHERE id = ?`,
+  );
+  const updateAll = db.transaction((ids: string[]) => {
+    for (const id of ids) update.run(now, now, id);
+  });
+  updateAll(matchedIds);
+
+  return matchedIds.length;
+}
+
 export function isDuplicate(
   candidate: { title: string; year: number; mediaType: MediaType },
   ownedSet: Set<string>,
@@ -334,6 +382,7 @@ export async function generateRecommendations(
     user_rating: null,
     genres: match?.genres && match.genres.length > 0 ? JSON.stringify(match.genres) : null,
     library_group_id: libraryGroupId ?? null,
+    fetched_at: null,
     created_at: now,
     updated_at: now,
   }));

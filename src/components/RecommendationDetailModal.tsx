@@ -10,12 +10,14 @@ interface RecommendationDetailModalProps {
   recommendation: RecommendationRow;
   onClose: () => void;
   onStatusChange: (id: string, status: "yes" | "no" | "watched", userRating?: number) => void;
+  onFetchedChange?: (id: string, fetched: boolean) => void;
 }
 
 export function RecommendationDetailModal({
   recommendation,
   onClose,
   onStatusChange,
+  onFetchedChange,
 }: RecommendationDetailModalProps) {
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
@@ -88,6 +90,7 @@ export function RecommendationDetailModal({
             <RecommendationActions
               recommendation={recommendation}
               onStatusChange={onStatusChange}
+              onFetchedChange={onFetchedChange}
             />
           </div>
         </div>
