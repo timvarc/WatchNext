@@ -101,7 +101,7 @@ export function Header({ libraryGroupId, onSelectGroup }: HeaderProps) {
           <select
             value={libraryGroupId ?? ""}
             onChange={(e) => onSelectGroup(e.target.value || null)}
-            className="rounded border border-black/15 bg-transparent px-2 py-1.5 text-sm dark:border-white/15"
+            className="rounded border border-black/15 bg-white px-2 py-1.5 text-sm text-black dark:border-white/15 dark:bg-neutral-900 dark:text-white dark:[color-scheme:dark]"
           >
             <option value="">All Libraries</option>
             {groups.map((group) => (
